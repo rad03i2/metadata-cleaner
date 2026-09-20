@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,7 +44,6 @@ func cleanJPEG(data []byte)([]byte,int,error){
 		if marker==0xda { if i+2>len(data){return nil,0,errors.New("truncated JPEG scan")}; l:=int(binary.BigEndian.Uint16(data[i:i+2])); if l<2||i+l>len(data){return nil,0,errors.New("invalid JPEG scan length")}; out=append(out,data[start:]...); return out,removed,nil }
 		if marker==0x01 || (marker>=0xd0&&marker<=0xd7){out=append(out,data[start:i]...);continue}
 		if i+2>len(data){return nil,0,errors.New("truncated JPEG segment")}; l:=int(binary.BigEndian.Uint16(data[i:i+2])); if l<2||i+l>len(data){return nil,0,errors.New("invalid JPEG segment length")}; end:=i+l
-		// APP1 commonly stores EXIF/XMP; APP13 stores IPTC/Photoshop metadata; COM stores comments.
 		if marker==0xe1||marker==0xed||marker==0xfe { removed++ } else { out=append(out,data[start:end]...) }; i=end
 	}
 	return nil,0,errors.New("JPEG ended unexpectedly")
@@ -54,7 +52,7 @@ func cleanJPEG(data []byte)([]byte,int,error){
 func cleanPNG(data []byte)([]byte,int,error){
 	out:=append([]byte{},data[:8]...); removed:=0; i:=8
 	for i<len(data){
-		if i+12>len(data){return nil,0,errors.New("truncated PNG chunk")}; n:=int(binary.BigEndian.Uint32(data[i:i+4])); if n<0||i+12+n>len(data){return nil,0,errors.New("invalid PNG chunk length")}; typ:=string(data[i+4:i+8]); end:=i+12+n
+		if i+12>len(data){return nil,0,errors.New("truncated PNG chunk")}; n:=int(binary.BigEndian.Uint32(data[i:i+4])); if i+12+n>len(data){return nil,0,errors.New("invalid PNG chunk length")}; typ:=string(data[i+4:i+8]); end:=i+12+n
 		remove:=typ=="tEXt"||typ=="zTXt"||typ=="iTXt"||typ=="eXIf"||typ=="tIME"
 		if remove { removed++ } else { out=append(out,data[i:end]...) }; i=end
 		if typ=="IEND" { if i!=len(data){return nil,0,errors.New("unexpected bytes after PNG IEND")}; return out,removed,nil }
