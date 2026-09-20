@@ -1,0 +1,17 @@
+# Go build outputs
+metadata-cleaner
+metadata-cleaner.exe
+*.test
+*.out
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local fixtures and cleaned images
+fixtures/private/
+*.clean.jpg
+*.clean.jpeg
+*.clean.png
